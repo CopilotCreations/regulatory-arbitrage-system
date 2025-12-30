@@ -1,0 +1,2 @@
+[console_scripts]
+reg-gap = reg_gap.cli:main
