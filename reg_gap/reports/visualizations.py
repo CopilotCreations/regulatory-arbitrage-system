@@ -27,7 +27,12 @@ class HeatmapData:
     max_value: float = 1.0
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all heatmap properties including
+                rows, columns, values, title, value_label, min_value, and max_value.
+        """
         return {
             'rows': self.rows,
             'columns': self.columns,
@@ -39,7 +44,12 @@ class HeatmapData:
         }
     
     def to_json(self) -> str:
-        """Convert to JSON string."""
+        """Convert to JSON string.
+
+        Returns:
+            str: A JSON-formatted string representation of the heatmap data
+                with 2-space indentation.
+        """
         return json.dumps(self.to_dict(), indent=2)
 
 
@@ -53,7 +63,12 @@ class RankingData:
     ascending: bool = False  # False = highest first
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all ranking properties including
+                items, title, value_label, and ascending flag.
+        """
         return {
             'items': self.items,
             'title': self.title,
@@ -83,14 +98,18 @@ class Visualizer:
         self,
         gap_matrix: dict[tuple[str, str], list[JurisdictionalGap]]
     ) -> HeatmapData:
-        """
-        Generate heatmap of gaps between jurisdictions.
-        
+        """Generate heatmap of gaps between jurisdictions.
+
+        Creates a symmetric heatmap showing average gap severity between
+        each pair of jurisdictions.
+
         Args:
-            gap_matrix: Matrix of gaps between jurisdiction pairs
-            
+            gap_matrix: A dictionary mapping jurisdiction pairs (as tuples)
+                to lists of JurisdictionalGap instances between them.
+
         Returns:
-            HeatmapData for visualization
+            HeatmapData: Heatmap data structure with jurisdictions as both
+                rows and columns, and average severity values in the matrix.
         """
         # Extract unique jurisdictions
         jurisdictions = set()
@@ -130,14 +149,18 @@ class Visualizer:
         self,
         gap_matrix: dict[tuple[str, str], list[JurisdictionalGap]]
     ) -> HeatmapData:
-        """
-        Generate heatmap of gap types by jurisdiction pair.
-        
+        """Generate heatmap of gap types by jurisdiction pair.
+
+        Creates a heatmap showing the count of each gap type for every
+        jurisdiction pair combination.
+
         Args:
-            gap_matrix: Matrix of gaps between jurisdiction pairs
-            
+            gap_matrix: A dictionary mapping jurisdiction pairs (as tuples)
+                to lists of JurisdictionalGap instances between them.
+
         Returns:
-            HeatmapData for visualization
+            HeatmapData: Heatmap data structure with jurisdiction pairs as
+                rows, gap types as columns, and gap counts as values.
         """
         # Get all gap types
         gap_types = [gt.value for gt in GapType]
@@ -177,15 +200,19 @@ class Visualizer:
         ambiguities: list[AmbiguityInstance],
         top_n: int = 20
     ) -> RankingData:
-        """
-        Generate ranking of ambiguities by severity.
-        
+        """Generate ranking of ambiguities by severity.
+
+        Sorts ambiguities by severity score and returns the top N items
+        formatted for ranking visualization.
+
         Args:
-            ambiguities: List of ambiguity instances
-            top_n: Number of top items to include
-            
+            ambiguities: List of AmbiguityInstance objects to rank.
+            top_n: Maximum number of top items to include in the ranking.
+                Defaults to 20.
+
         Returns:
-            RankingData for visualization
+            RankingData: Ranking data structure containing sorted items
+                with name, value, category, confidence, and context fields.
         """
         # Sort by severity
         sorted_amb = sorted(ambiguities, key=lambda a: a.severity, reverse=True)[:top_n]
@@ -212,14 +239,23 @@ class Visualizer:
         self,
         severities: list[float]
     ) -> dict:
-        """
-        Generate distribution data for severity scores.
-        
+        """Generate distribution data for severity scores.
+
+        Bins severity scores into five categories (Informational, Low,
+        Medium, High, Critical) and calculates distribution statistics.
+
         Args:
-            severities: List of severity scores
-            
+            severities: List of severity scores as floats between 0.0 and 1.0.
+
         Returns:
-            Distribution data for visualization
+            dict: Distribution data containing:
+                - labels: List of bin labels.
+                - counts: List of counts per bin.
+                - title: Chart title.
+                - total: Total number of severity scores.
+                - mean: Mean severity value.
+                - max: Maximum severity value.
+                - min: Minimum severity value.
         """
         if not severities:
             return {
@@ -263,14 +299,21 @@ class Visualizer:
         self,
         gap_matrix: dict[tuple[str, str], list[JurisdictionalGap]]
     ) -> dict:
-        """
-        Generate summary chart data for gaps.
-        
+        """Generate summary chart data for gaps.
+
+        Aggregates gap data across all jurisdiction pairs, counting gaps
+        by type and calculating average severity for each gap type.
+
         Args:
-            gap_matrix: Matrix of gaps between jurisdiction pairs
-            
+            gap_matrix: A dictionary mapping jurisdiction pairs (as tuples)
+                to lists of JurisdictionalGap instances between them.
+
         Returns:
-            Chart data for visualization
+            dict: Chart data containing:
+                - type_counts: Dictionary of gap counts by gap type.
+                - average_severity_by_type: Dictionary of average severity by gap type.
+                - total_gaps: Total number of gaps across all pairs.
+                - title: Chart title.
         """
         # Count by gap type across all pairs
         type_counts = {gt.value: 0 for gt in GapType}
@@ -301,18 +344,19 @@ class Visualizer:
         gaps: list[JurisdictionalGap],
         ambiguities: list[AmbiguityInstance]
     ) -> HeatmapData:
-        """
-        Generate priority matrix for items requiring review.
-        
-        Plots items by severity vs confidence to help prioritize
-        legal review efforts.
-        
+        """Generate priority matrix for items requiring review.
+
+        Creates a matrix plotting items by severity vs confidence to help
+        prioritize legal review efforts. Gaps requiring legal review and
+        ambiguities with severity >= 0.5 are included.
+
         Args:
-            gaps: Jurisdictional gaps
-            ambiguities: Ambiguity instances
-            
+            gaps: List of JurisdictionalGap instances to analyze.
+            ambiguities: List of AmbiguityInstance objects to analyze.
+
         Returns:
-            HeatmapData representing priority matrix
+            HeatmapData: Heatmap data structure with severity bins as rows,
+                confidence bins as columns, and item counts as values.
         """
         # Define severity and confidence bins
         severity_bins = ['Low (0-0.33)', 'Medium (0.33-0.66)', 'High (0.66-1.0)']
@@ -355,14 +399,17 @@ class Visualizer:
         )
     
     def generate_ascii_heatmap(self, heatmap: HeatmapData) -> str:
-        """
-        Generate ASCII representation of heatmap for terminal display.
-        
+        """Generate ASCII representation of heatmap for terminal display.
+
+        Converts heatmap data into a text-based visualization using Unicode
+        block characters to represent different value intensities.
+
         Args:
-            heatmap: HeatmapData to visualize
-            
+            heatmap: HeatmapData instance to visualize.
+
         Returns:
-            ASCII string representation
+            str: ASCII string representation of the heatmap with title,
+                header row, data rows with symbols, and a legend.
         """
         if not heatmap.rows or not heatmap.columns:
             return "No data to display"
@@ -406,15 +453,18 @@ class Visualizer:
         return "\n".join(lines)
     
     def generate_ascii_ranking(self, ranking: RankingData, max_items: int = 10) -> str:
-        """
-        Generate ASCII representation of ranking for terminal display.
-        
+        """Generate ASCII representation of ranking for terminal display.
+
+        Converts ranking data into a text-based visualization with numbered
+        items, bar charts, values, and categories.
+
         Args:
-            ranking: RankingData to visualize
-            max_items: Maximum items to show
-            
+            ranking: RankingData instance to visualize.
+            max_items: Maximum number of items to display. Defaults to 10.
+
         Returns:
-            ASCII string representation
+            str: ASCII string representation of the ranking with title,
+                numbered items, proportional bar charts, and category labels.
         """
         if not ranking.items:
             return "No items to rank"

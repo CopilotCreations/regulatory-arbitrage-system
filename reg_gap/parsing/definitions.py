@@ -26,7 +26,11 @@ class Definition:
     cross_references: list[str] = field(default_factory=list)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the definition to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all definition attributes.
+        """
         return {
             'term': self.term,
             'definition_text': self.definition_text,
@@ -78,6 +82,14 @@ class DefinitionExtractor:
     ]
     
     def __init__(self, min_definition_length: int = 10, max_definition_length: int = 2000):
+        """Initialize the definition extractor.
+
+        Args:
+            min_definition_length: Minimum character length for a valid definition.
+                Defaults to 10.
+            max_definition_length: Maximum character length for a valid definition.
+                Defaults to 2000.
+        """
         self.min_definition_length = min_definition_length
         self.max_definition_length = max_definition_length
         
@@ -91,16 +103,16 @@ class DefinitionExtractor:
         source_document: Optional[str] = None,
         jurisdiction: Optional[str] = None
     ) -> list[Definition]:
-        """
-        Extract definitions from regulatory text.
-        
+        """Extract definitions from regulatory text.
+
         Args:
-            text: Regulatory text to analyze
-            source_document: Optional source document identifier
-            jurisdiction: Optional jurisdiction identifier
-            
+            text: Regulatory text to analyze.
+            source_document: Optional source document identifier.
+            jurisdiction: Optional jurisdiction identifier.
+
         Returns:
-            List of extracted Definition objects
+            list[Definition]: List of extracted Definition objects, sorted by
+                position in the source text.
         """
         definitions = []
         seen_terms = set()
@@ -138,7 +150,16 @@ class DefinitionExtractor:
         return sorted(definitions, key=lambda d: d.position)
     
     def _is_valid_definition(self, term: str, definition_text: str) -> bool:
-        """Validate that the extraction is a real definition."""
+        """Validate that the extraction is a real definition.
+
+        Args:
+            term: The extracted term to validate.
+            definition_text: The extracted definition text to validate.
+
+        Returns:
+            bool: True if the definition passes all validation checks,
+                False otherwise.
+        """
         # Term should be reasonable length
         if len(term) < 2 or len(term) > 100:
             return False
@@ -157,7 +178,14 @@ class DefinitionExtractor:
         return True
     
     def _extract_cross_references(self, definition_text: str) -> list[str]:
-        """Extract cross-references from definition text."""
+        """Extract cross-references from definition text.
+
+        Args:
+            definition_text: The definition text to scan for cross-references.
+
+        Returns:
+            list[str]: A list of unique section/rule references found in the text.
+        """
         refs = []
         
         for pattern in self._xref_patterns:
@@ -167,14 +195,20 @@ class DefinitionExtractor:
         return list(set(refs))
     
     def find_conflicts(self, definitions: list[Definition]) -> list[dict]:
-        """
-        Find conflicting definitions for the same term.
-        
+        """Find conflicting definitions for the same term.
+
+        Analyzes a list of definitions to identify cases where the same term
+        has different definitions, potentially indicating regulatory conflicts.
+
         Args:
-            definitions: List of definitions to analyze
-            
+            definitions: List of definitions to analyze.
+
         Returns:
-            List of conflict records
+            list[dict]: List of conflict records, each containing:
+                - term: The conflicting term.
+                - definitions: List of differing definitions.
+                - jurisdictions: List of jurisdictions involved.
+                - conflict_type: Classification of the conflict.
         """
         # Group by normalized term
         by_term: dict[str, list[Definition]] = {}
@@ -204,7 +238,20 @@ class DefinitionExtractor:
         return conflicts
     
     def _classify_conflict(self, definitions: list[Definition]) -> str:
-        """Classify the type of definitional conflict."""
+        """Classify the type of definitional conflict.
+
+        Uses heuristics based on definition length and jurisdiction differences
+        to categorize the conflict.
+
+        Args:
+            definitions: List of conflicting definitions for the same term.
+
+        Returns:
+            str: The conflict type, one of:
+                - "scope_difference": Definitions vary significantly in length.
+                - "jurisdictional": Definitions come from different jurisdictions.
+                - "semantic": Other types of definitional differences.
+        """
         # Simple heuristic based on definition length differences
         lengths = [len(d.definition_text) for d in definitions]
         max_len = max(lengths)
@@ -220,16 +267,18 @@ class DefinitionExtractor:
         return "semantic"
     
     def build_glossary(self, definitions: list[Definition]) -> dict[str, dict]:
-        """
-        Build a glossary from extracted definitions.
-        
-        For terms with multiple definitions, includes all variants.
-        
+        """Build a glossary from extracted definitions.
+
+        For terms with multiple definitions, includes all variants with their
+        sources and jurisdictions.
+
         Args:
-            definitions: List of definitions
-            
+            definitions: List of definitions to build the glossary from.
+
         Returns:
-            Glossary dictionary with terms and their definitions
+            dict[str, dict]: Glossary dictionary mapping terms to their metadata,
+                including primary_definition, variants, sources, jurisdictions,
+                and cross_references.
         """
         glossary = {}
         

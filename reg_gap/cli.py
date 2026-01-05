@@ -25,7 +25,12 @@ from .reports import ReportGenerator, Visualizer
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Create the argument parser."""
+    """Create the argument parser for the CLI.
+
+    Returns:
+        argparse.ArgumentParser: Configured argument parser with all subcommands
+            (analyze, compare, report, demo) and their respective options.
+    """
     parser = argparse.ArgumentParser(
         prog="reg_gap",
         description="RegulatoryGapAnalyzer - Identify regulatory ambiguity and divergence",
@@ -150,7 +155,21 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def analyze_document(args) -> int:
-    """Analyze a single regulatory document."""
+    """Analyze a single regulatory document for clauses, definitions, and ambiguity.
+
+    Loads the document, normalizes text, extracts clauses and definitions,
+    detects ambiguity, and outputs results in the specified format.
+
+    Args:
+        args: Parsed command-line arguments containing:
+            - document: Path to the regulatory document.
+            - jurisdiction: Jurisdiction code (e.g., US-SEC, EU-MiFID).
+            - output: Optional output file path.
+            - format: Output format (json, markdown, or text).
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure).
+    """
     print(f"Analyzing: {args.document}")
     print(f"Jurisdiction: {args.jurisdiction}")
     print("-" * 50)
@@ -244,7 +263,22 @@ def analyze_document(args) -> int:
 
 
 def compare_documents(args) -> int:
-    """Compare two regulatory documents."""
+    """Compare two regulatory documents from different jurisdictions.
+
+    Loads both documents, extracts regulatory profiles, identifies gaps
+    between jurisdictions, and outputs comparison results.
+
+    Args:
+        args: Parsed command-line arguments containing:
+            - document1: Path to the first regulatory document.
+            - document2: Path to the second regulatory document.
+            - jurisdictions: List of two jurisdiction codes.
+            - output: Optional output file path.
+            - format: Output format (json, markdown, or text).
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure).
+    """
     print(f"Comparing documents:")
     print(f"  1. {args.document1} ({args.jurisdictions[0]})")
     print(f"  2. {args.document2} ({args.jurisdictions[1]})")
@@ -340,7 +374,22 @@ def compare_documents(args) -> int:
 
 
 def generate_report(args) -> int:
-    """Generate a full analysis report."""
+    """Generate a comprehensive analysis report for multiple documents.
+
+    Processes all provided documents, compares all jurisdiction pairs,
+    models enforcement scenarios, assesses severity, and generates
+    a full compliance report.
+
+    Args:
+        args: Parsed command-line arguments containing:
+            - documents: List of paths to regulatory documents.
+            - jurisdictions: List of jurisdiction codes (one per document).
+            - output: Output file path (required).
+            - format: Output format (json or markdown).
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure).
+    """
     if len(args.documents) != len(args.jurisdictions):
         print("Error: Number of documents must match number of jurisdictions", file=sys.stderr)
         return 1
@@ -438,7 +487,20 @@ def generate_report(args) -> int:
 
 
 def run_demo(args) -> int:
-    """Run a demo with synthetic regulatory data."""
+    """Run a demonstration analysis using synthetic regulatory data.
+
+    Creates synthetic US and EU regulation texts, performs full analysis
+    including clause extraction, definition extraction, ambiguity detection,
+    and jurisdictional comparison. Outputs results to console and optionally
+    saves to a file.
+
+    Args:
+        args: Parsed command-line arguments containing:
+            - output: Optional output file path for saving demo results.
+
+    Returns:
+        int: Exit code (0 for success).
+    """
     print("Running RegulatoryGapAnalyzer Demo")
     print("=" * 50)
     
@@ -590,7 +652,21 @@ def run_demo(args) -> int:
 
 
 def format_output(data: dict, format_type: str) -> str:
-    """Format output data according to requested format."""
+    """Format output data according to the requested format.
+
+    Converts a dictionary of results into a formatted string suitable
+    for display or file output.
+
+    Args:
+        data: Dictionary containing analysis results to format.
+        format_type: Output format type. One of:
+            - "json": Pretty-printed JSON.
+            - "markdown": Markdown with headings and lists.
+            - "text": Plain text with indentation.
+
+    Returns:
+        str: Formatted string representation of the data.
+    """
     if format_type == "json":
         return json.dumps(data, indent=2, default=str)
     
@@ -647,7 +723,14 @@ def format_output(data: dict, format_type: str) -> str:
 
 
 def main() -> int:
-    """Main entry point."""
+    """Main entry point for the RegulatoryGapAnalyzer CLI.
+
+    Parses command-line arguments and dispatches to the appropriate
+    command handler (analyze, compare, report, or demo).
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure or unknown command).
+    """
     parser = create_parser()
     args = parser.parse_args()
     

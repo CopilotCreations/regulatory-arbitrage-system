@@ -37,7 +37,12 @@ class AmbiguityInstance:
     interpretation_range: list[str] = field(default_factory=list)
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the ambiguity instance to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all ambiguity instance attributes,
+                with the ambiguity_type converted to its string value.
+        """
         return {
             'text': self.text,
             'ambiguity_type': self.ambiguity_type.value,
@@ -64,7 +69,13 @@ class AmbiguityReport:
     recommendations: list[str]
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the ambiguity report to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all report attributes, with
+                ambiguity types converted to string values and instances
+                converted to dictionaries.
+        """
         return {
             'document_id': self.document_id,
             'jurisdiction': self.jurisdiction,
@@ -241,7 +252,18 @@ class AmbiguityDetector:
         )
     
     def _detect_vague_standards(self, text: str) -> list[AmbiguityInstance]:
-        """Detect vague standard phrases."""
+        """Detect vague standard phrases in regulatory text.
+
+        Scans the text for common vague terms like "reasonable", "appropriate",
+        and "material" that create interpretation uncertainty.
+
+        Args:
+            text: The regulatory text to analyze.
+
+        Returns:
+            list[AmbiguityInstance]: A list of detected vague standard instances,
+                each containing the matched phrase, context, and severity.
+        """
         instances = []
         text_lower = text.lower()
         
@@ -277,7 +299,18 @@ class AmbiguityDetector:
         patterns: list[tuple[re.Pattern, str, float]],
         ambiguity_type: AmbiguityType
     ) -> list[AmbiguityInstance]:
-        """Detect ambiguity using regex patterns."""
+        """Detect ambiguity in text using regex patterns.
+
+        Args:
+            text: The regulatory text to analyze.
+            patterns: A list of tuples containing (compiled regex pattern,
+                description string, severity float).
+            ambiguity_type: The type of ambiguity being detected.
+
+        Returns:
+            list[AmbiguityInstance]: A list of detected ambiguity instances
+                matching the provided patterns.
+        """
         instances = []
         
         for pattern, description, severity in patterns:
@@ -299,7 +332,18 @@ class AmbiguityDetector:
         return instances
     
     def _detect_undefined_terms(self, text: str) -> list[AmbiguityInstance]:
-        """Detect potentially undefined terms."""
+        """Detect potentially undefined terms in the regulatory text.
+
+        Identifies quoted terms that may require definitions but are not
+        present in the defined_terms set. Skips terms that appear to be
+        definitions themselves.
+
+        Args:
+            text: The regulatory text to analyze.
+
+        Returns:
+            list[AmbiguityInstance]: A list of detected undefined term instances.
+        """
         instances = []
         
         # Look for quoted terms that might need definitions
@@ -344,7 +388,19 @@ class AmbiguityDetector:
         instances: list[AmbiguityInstance],
         by_type: dict[AmbiguityType, int]
     ) -> list[str]:
-        """Generate recommendations based on ambiguity analysis."""
+        """Generate recommendations based on ambiguity analysis results.
+
+        Produces actionable recommendations for addressing detected ambiguities,
+        including legal review guidance and type-specific suggestions.
+
+        Args:
+            instances: The list of all detected ambiguity instances.
+            by_type: A dictionary mapping ambiguity types to their occurrence counts.
+
+        Returns:
+            list[str]: A list of recommendation strings for addressing
+                the detected ambiguities.
+        """
         recommendations = []
         
         if not instances:
@@ -386,5 +442,16 @@ class AmbiguityDetector:
         return recommendations
     
     def get_ambiguity_ranking(self, instances: list[AmbiguityInstance]) -> list[AmbiguityInstance]:
-        """Rank ambiguities by severity for prioritization."""
+        """Rank ambiguities by severity for prioritization.
+
+        Sorts ambiguity instances in descending order by severity first,
+        then by confidence as a secondary sort key.
+
+        Args:
+            instances: The list of ambiguity instances to rank.
+
+        Returns:
+            list[AmbiguityInstance]: The sorted list of ambiguity instances,
+                with highest severity and confidence items first.
+        """
         return sorted(instances, key=lambda x: (-x.severity, -x.confidence))

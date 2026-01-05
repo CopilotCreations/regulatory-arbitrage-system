@@ -31,7 +31,12 @@ class GapSummary:
     top_gaps: list[dict]
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the gap summary to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all gap summary fields with
+                jurisdiction names, gap counts, and top gap details.
+        """
         return {
             'jurisdiction_a': self.jurisdiction_a,
             'jurisdiction_b': self.jurisdiction_b,
@@ -60,7 +65,13 @@ class ComplianceReport:
     disclaimers: list[str]
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the compliance report to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary containing all report fields including
+                metadata, gap summaries, ambiguity reports, enforcement
+                scenarios, and recommendations.
+        """
         return {
             'report_id': self.report_id,
             'generated_at': self.generated_at.isoformat(),
@@ -76,7 +87,14 @@ class ComplianceReport:
         }
     
     def to_json(self, indent: int = 2) -> str:
-        """Convert to JSON string."""
+        """Convert the compliance report to a JSON string.
+
+        Args:
+            indent: Number of spaces for JSON indentation. Defaults to 2.
+
+        Returns:
+            str: A JSON-formatted string representation of the report.
+        """
         return json.dumps(self.to_dict(), indent=indent, default=str)
 
 
@@ -97,7 +115,12 @@ class ReportGenerator:
     ]
     
     def __init__(self, report_prefix: str = "REG-GAP"):
-        """Initialize report generator."""
+        """Initialize the report generator.
+
+        Args:
+            report_prefix: Prefix string for generated report IDs.
+                Defaults to "REG-GAP".
+        """
         self.report_prefix = report_prefix
         self._report_counter = 0
     
@@ -108,17 +131,21 @@ class ReportGenerator:
         jurisdiction_b: str,
         top_n: int = 5
     ) -> GapSummary:
-        """
-        Generate summary for gaps between two jurisdictions.
-        
+        """Generate summary for gaps between two jurisdictions.
+
+        Aggregates gap statistics including counts by type, severity
+        metrics, and the top gaps ranked by severity score.
+
         Args:
-            gaps: List of identified gaps
-            jurisdiction_a: First jurisdiction
-            jurisdiction_b: Second jurisdiction
-            top_n: Number of top gaps to include in detail
-            
+            gaps: List of identified jurisdictional gaps to summarize.
+            jurisdiction_a: Name of the first jurisdiction.
+            jurisdiction_b: Name of the second jurisdiction.
+            top_n: Number of top gaps to include in detail. Defaults to 5.
+
         Returns:
-            GapSummary with aggregated statistics
+            GapSummary: A summary object containing aggregated statistics
+                including total gaps, gaps by type, high severity count,
+                and the top N most severe gaps.
         """
         # Count by type
         by_type: dict[str, int] = {}
@@ -162,20 +189,26 @@ class ReportGenerator:
         document_count: int = 0,
         clause_count: int = 0
     ) -> ComplianceReport:
-        """
-        Generate comprehensive compliance report.
-        
+        """Generate a comprehensive compliance report.
+
+        Compiles all analysis components into a unified report including
+        gap summaries, ambiguity findings, enforcement scenarios, severity
+        assessments, and recommendations with standard disclaimers.
+
         Args:
-            jurisdictions: List of analyzed jurisdictions
-            gap_matrix: Matrix of gaps between jurisdiction pairs
-            ambiguity_reports: List of ambiguity analysis reports
-            enforcement_scenarios: List of enforcement scenarios
-            severity_ratings: List of severity ratings
-            document_count: Number of documents analyzed
-            clause_count: Number of clauses extracted
-            
+            jurisdictions: List of jurisdiction names that were analyzed.
+            gap_matrix: Dictionary mapping jurisdiction pairs (tuples) to
+                their corresponding list of identified gaps.
+            ambiguity_reports: List of ambiguity analysis reports from
+                document processing.
+            enforcement_scenarios: List of modeled enforcement scenarios.
+            severity_ratings: List of severity ratings for identified issues.
+            document_count: Number of documents analyzed. Defaults to 0.
+            clause_count: Number of clauses extracted. Defaults to 0.
+
         Returns:
-            ComplianceReport with full analysis
+            ComplianceReport: A comprehensive report containing all analysis
+                results, recommendations, and legal disclaimers.
         """
         self._report_counter += 1
         report_id = f"{self.report_prefix}-{self._report_counter:05d}"
@@ -233,7 +266,16 @@ class ReportGenerator:
         )
     
     def _summarize_severity(self, ratings: list[SeverityRating]) -> dict:
-        """Summarize severity ratings."""
+        """Summarize severity ratings into aggregate statistics.
+
+        Args:
+            ratings: List of severity ratings to summarize.
+
+        Returns:
+            dict: A dictionary containing total counts, counts by severity
+                level, average score, and counts of items requiring
+                immediate attention or legal review.
+        """
         if not ratings:
             return {'message': 'No severity ratings available'}
         
@@ -264,7 +306,21 @@ class ReportGenerator:
         ambiguity_reports: list[AmbiguityReport],
         enforcement_scenarios: list[EnforcementScenario]
     ) -> list[str]:
-        """Generate high-level recommendations (non-prescriptive)."""
+        """Generate high-level, non-prescriptive recommendations.
+
+        Analyzes the provided summaries and reports to generate
+        actionable but non-prescriptive recommendations that emphasize
+        the need for legal review.
+
+        Args:
+            gap_summaries: List of gap summaries between jurisdictions.
+            ambiguity_reports: List of ambiguity analysis reports.
+            enforcement_scenarios: List of enforcement scenarios.
+
+        Returns:
+            list[str]: A list of recommendation strings prioritizing
+                legal review and compliance actions.
+        """
         recommendations = []
         
         # Always start with legal review recommendation
@@ -306,14 +362,18 @@ class ReportGenerator:
         return recommendations
     
     def generate_markdown_report(self, report: ComplianceReport) -> str:
-        """
-        Generate a markdown-formatted report.
-        
+        """Generate a markdown-formatted report.
+
+        Converts a ComplianceReport into a human-readable markdown document
+        with sections for disclaimers, executive summary, severity summary,
+        jurisdictional gap analysis, and recommendations.
+
         Args:
-            report: ComplianceReport to format
-            
+            report: The ComplianceReport object to format as markdown.
+
         Returns:
-            Markdown string
+            str: A markdown-formatted string representation of the report
+                suitable for display or export.
         """
         lines = []
         
@@ -382,16 +442,21 @@ class ReportGenerator:
         ambiguities: list[AmbiguityInstance],
         scenarios: list[EnforcementScenario]
     ) -> list[dict]:
-        """
-        Generate a list of items flagged for legal review.
-        
+        """Generate a list of items flagged for legal review.
+
+        Collects and prioritizes items requiring legal review from gaps,
+        ambiguities, and enforcement scenarios. Items are sorted by
+        priority (HIGH first) and severity score.
+
         Args:
-            gaps: Jurisdictional gaps
-            ambiguities: Ambiguity instances
-            scenarios: Enforcement scenarios
-            
+            gaps: List of jurisdictional gaps to evaluate for review.
+            ambiguities: List of ambiguity instances to evaluate.
+            scenarios: List of enforcement scenarios to evaluate.
+
         Returns:
-            List of items requiring review
+            list[dict]: A sorted list of dictionaries, each containing
+                type, category, description, severity, and priority
+                fields for items requiring legal review.
         """
         items = []
         

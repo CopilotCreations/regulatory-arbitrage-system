@@ -54,7 +54,12 @@ class EnforcementScenario:
     requires_legal_review: bool = True
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        Returns:
+            dict: Dictionary representation of the enforcement scenario
+                containing all scenario attributes.
+        """
         return {
             'scenario_id': self.scenario_id,
             'description': self.description,
@@ -176,7 +181,17 @@ class EnforcementModel:
         clause: RegulatoryClause,
         ambiguities: list[AmbiguityInstance]
     ) -> EnforcementLikelihood:
-        """Adjust likelihood based on clause characteristics."""
+        """Adjust likelihood based on clause characteristics.
+
+        Args:
+            base: Base enforcement likelihood from clause type.
+            clause: The regulatory clause being analyzed.
+            ambiguities: List of ambiguity instances affecting the clause.
+
+        Returns:
+            EnforcementLikelihood: Adjusted likelihood after applying
+                ambiguity impacts and conservative factor.
+        """
         score = base.value
         
         # Ambiguity increases risk (regulators may interpret strictly)
@@ -207,7 +222,16 @@ class EnforcementModel:
         clause: RegulatoryClause,
         likelihood: EnforcementLikelihood
     ) -> list[EnforcementOutcome]:
-        """Determine potential enforcement outcomes."""
+        """Determine potential enforcement outcomes.
+
+        Args:
+            clause: The regulatory clause being analyzed.
+            likelihood: The calculated enforcement likelihood.
+
+        Returns:
+            list[EnforcementOutcome]: List of potential enforcement outcomes
+                based on clause type and likelihood severity.
+        """
         outcomes = []
         
         # Base outcomes on clause type
@@ -237,7 +261,17 @@ class EnforcementModel:
         ambiguities: list[AmbiguityInstance],
         outcomes: list[EnforcementOutcome]
     ) -> float:
-        """Calculate overall severity score."""
+        """Calculate overall severity score.
+
+        Args:
+            clause: The regulatory clause being analyzed.
+            ambiguities: List of ambiguity instances affecting the clause.
+            outcomes: List of potential enforcement outcomes.
+
+        Returns:
+            float: Severity score between 0.0 and 1.0, with higher values
+                indicating more severe potential enforcement actions.
+        """
         # Base severity from outcomes
         outcome_severity = {
             EnforcementOutcome.WARNING: 0.1,
@@ -268,7 +302,16 @@ class EnforcementModel:
         clause: RegulatoryClause,
         ambiguities: list[AmbiguityInstance]
     ) -> str:
-        """Generate maximum plausible interpretation description."""
+        """Generate maximum plausible interpretation description.
+
+        Args:
+            clause: The regulatory clause being analyzed.
+            ambiguities: List of ambiguity instances affecting the clause.
+
+        Returns:
+            str: Human-readable description of the worst-case regulatory
+                interpretation for planning purposes.
+        """
         parts = ["MAXIMUM INTERPRETATION: "]
         
         if clause.clause_type == ClauseType.PROHIBITION:
@@ -290,7 +333,15 @@ class EnforcementModel:
         return "".join(parts)
     
     def _identify_mitigating_factors(self, clause: RegulatoryClause) -> list[str]:
-        """Identify factors that might reduce enforcement risk."""
+        """Identify factors that might reduce enforcement risk.
+
+        Args:
+            clause: The regulatory clause being analyzed.
+
+        Returns:
+            list[str]: List of factors that could potentially reduce
+                enforcement risk or provide safe harbors.
+        """
         factors = []
         
         if clause.conditions:
@@ -309,7 +360,16 @@ class EnforcementModel:
         clause: RegulatoryClause,
         ambiguities: list[AmbiguityInstance]
     ) -> list[str]:
-        """Identify factors that might increase enforcement risk."""
+        """Identify factors that might increase enforcement risk.
+
+        Args:
+            clause: The regulatory clause being analyzed.
+            ambiguities: List of ambiguity instances affecting the clause.
+
+        Returns:
+            list[str]: List of factors that could potentially increase
+                enforcement risk or regulatory scrutiny.
+        """
         factors = []
         
         if clause.clause_type == ClauseType.PROHIBITION:
@@ -328,14 +388,14 @@ class EnforcementModel:
         self,
         scenarios: list[EnforcementScenario]
     ) -> dict:
-        """
-        Generate a summary report of enforcement scenarios.
-        
+        """Generate a summary report of enforcement scenarios.
+
         Args:
-            scenarios: List of scenarios to summarize
-            
+            scenarios: List of enforcement scenarios to summarize.
+
         Returns:
-            Summary report dictionary
+            dict: Summary report containing risk counts, severity metrics,
+                and a legal disclaimer.
         """
         if not scenarios:
             return {

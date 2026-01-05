@@ -134,25 +134,50 @@ class EntityRecognizer:
         self._time_re = self._compile_patterns(self.TIME_PATTERNS)
     
     def _build_entity_pattern(self, entities: set) -> re.Pattern:
-        """Build regex pattern from entity set."""
+        """Build regex pattern from entity set.
+
+        Args:
+            entities: Set of entity strings to match.
+
+        Returns:
+            Compiled regex pattern that matches any entity in the set.
+        """
         # Sort by length descending to match longer phrases first
         sorted_entities = sorted(entities, key=len, reverse=True)
         pattern = '|'.join(re.escape(e) for e in sorted_entities)
         return re.compile(rf'\b({pattern})\b', re.IGNORECASE)
     
     def _build_body_pattern(self) -> re.Pattern:
-        """Build pattern for regulatory bodies."""
+        """Build pattern for regulatory bodies.
+
+        Returns:
+            Compiled regex pattern matching regulatory body abbreviations
+            and full names.
+        """
         abbreviations = '|'.join(re.escape(k) for k in self.REGULATORY_BODIES.keys())
         full_names = '|'.join(re.escape(v) for v in self.REGULATORY_BODIES.values())
         return re.compile(rf'\b({abbreviations}|{full_names})\b', re.IGNORECASE)
     
     def _compile_patterns(self, patterns: list[str]) -> re.Pattern:
-        """Compile list of patterns into single regex."""
+        """Compile list of patterns into single regex.
+
+        Args:
+            patterns: List of regex pattern strings to combine.
+
+        Returns:
+            Single compiled regex pattern matching any of the input patterns.
+        """
         combined = '|'.join(f'({p})' for p in patterns)
         return re.compile(combined, re.IGNORECASE)
     
     def _compile_monetary_patterns(self) -> list[tuple[re.Pattern, Optional[str]]]:
-        """Compile monetary patterns with currency info."""
+        """Compile monetary patterns with currency info.
+
+        Returns:
+            List of tuples containing compiled regex patterns and their
+            associated currency codes (or None if currency is embedded
+            in the pattern).
+        """
         return [(re.compile(p, re.IGNORECASE), c) for p, c in self.MONETARY_PATTERNS]
     
     def recognize(self, text: str) -> list[RegulatoryEntity]:
@@ -229,7 +254,15 @@ class EntityRecognizer:
         return entities
     
     def _normalize_regulatory_body(self, text: str) -> str:
-        """Normalize regulatory body name to standard form."""
+        """Normalize regulatory body name to standard form.
+
+        Args:
+            text: Regulatory body name (abbreviation or full name).
+
+        Returns:
+            Standard abbreviation for the regulatory body, or the original
+            text if no match is found.
+        """
         text_upper = text.upper()
         
         # Check abbreviations
@@ -242,7 +275,15 @@ class EntityRecognizer:
         return text
     
     def _remove_overlaps(self, entities: list[RegulatoryEntity]) -> list[RegulatoryEntity]:
-        """Remove overlapping entities, keeping the most specific."""
+        """Remove overlapping entities, keeping the most specific.
+
+        Args:
+            entities: List of entities sorted by start position.
+
+        Returns:
+            List of non-overlapping entities, preferring higher confidence
+            entities when overlaps occur.
+        """
         if not entities:
             return []
         
@@ -260,12 +301,28 @@ class EntityRecognizer:
         return result
     
     def recognize_by_type(self, text: str, entity_type: EntityType) -> list[RegulatoryEntity]:
-        """Recognize only entities of a specific type."""
+        """Recognize only entities of a specific type.
+
+        Args:
+            text: Regulatory text to analyze.
+            entity_type: The type of entity to filter for.
+
+        Returns:
+            List of recognized RegulatoryEntity objects matching the
+            specified type.
+        """
         all_entities = self.recognize(text)
         return [e for e in all_entities if e.entity_type == entity_type]
     
     def get_entity_counts(self, text: str) -> dict[EntityType, int]:
-        """Get count of each entity type in text."""
+        """Get count of each entity type in text.
+
+        Args:
+            text: Regulatory text to analyze.
+
+        Returns:
+            Dictionary mapping each EntityType to its count in the text.
+        """
         entities = self.recognize(text)
         counts = {et: 0 for et in EntityType}
         

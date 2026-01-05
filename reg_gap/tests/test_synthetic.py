@@ -18,7 +18,12 @@ class TestSyntheticRegulations:
     
     @pytest.fixture
     def strict_regulation(self):
-        """Stricter regulation text."""
+        """Create a strict regulation text fixture.
+
+        Returns:
+            str: A multi-section regulation text with strict requirements including
+                mandatory reporting, complete documentation, and no exemptions.
+        """
         return """
         Section 1. Definitions
         "Covered Transaction" means any transaction exceeding $1,000 in value.
@@ -40,7 +45,12 @@ class TestSyntheticRegulations:
     
     @pytest.fixture
     def lenient_regulation(self):
-        """More lenient regulation text."""
+        """Create a lenient regulation text fixture.
+
+        Returns:
+            str: A multi-section regulation text with flexible requirements including
+                reasonable timeframes, appropriate documentation, and available exemptions.
+        """
         return """
         Article 1. Definitions
         "Reportable Transaction" means transactions generally exceeding $10,000.
@@ -62,16 +72,32 @@ class TestSyntheticRegulations:
     
     @pytest.fixture
     def clause_extractor(self):
+        """Create a ClauseExtractor instance fixture.
+
+        Returns:
+            ClauseExtractor: A new clause extractor for parsing regulation text.
+        """
         return ClauseExtractor()
     
     @pytest.fixture
     def definition_extractor(self):
+        """Create a DefinitionExtractor instance fixture.
+
+        Returns:
+            DefinitionExtractor: A new definition extractor for parsing terms.
+        """
         return DefinitionExtractor()
     
     def test_strict_has_more_obligations(
         self, strict_regulation, lenient_regulation, clause_extractor
     ):
-        """Test that stricter regulation has more obligations."""
+        """Test that stricter regulation has more obligations.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            clause_extractor: The clause extractor instance fixture.
+        """
         strict_clauses = clause_extractor.extract(strict_regulation)
         lenient_clauses = clause_extractor.extract(lenient_regulation)
         
@@ -84,7 +110,13 @@ class TestSyntheticRegulations:
     def test_strict_has_more_prohibitions(
         self, strict_regulation, lenient_regulation, clause_extractor
     ):
-        """Test that stricter regulation has more prohibitions."""
+        """Test that stricter regulation has more prohibitions.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            clause_extractor: The clause extractor instance fixture.
+        """
         strict_clauses = clause_extractor.extract(strict_regulation)
         lenient_clauses = clause_extractor.extract(lenient_regulation)
         
@@ -96,7 +128,13 @@ class TestSyntheticRegulations:
     def test_lenient_has_more_permissions(
         self, strict_regulation, lenient_regulation, clause_extractor
     ):
-        """Test that lenient regulation has more permissions."""
+        """Test that lenient regulation has more permissions.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            clause_extractor: The clause extractor instance fixture.
+        """
         strict_clauses = clause_extractor.extract(strict_regulation)
         lenient_clauses = clause_extractor.extract(lenient_regulation)
         
@@ -109,7 +147,13 @@ class TestSyntheticRegulations:
     def test_definition_conflict_detected(
         self, strict_regulation, lenient_regulation, definition_extractor
     ):
-        """Test that definitional conflicts are identified."""
+        """Test that definitional conflicts are identified.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            definition_extractor: The definition extractor instance fixture.
+        """
         strict_defs = definition_extractor.extract(strict_regulation, jurisdiction="Strict")
         lenient_defs = definition_extractor.extract(lenient_regulation, jurisdiction="Lenient")
         
@@ -123,7 +167,12 @@ class TestSyntheticRegulations:
     def test_lenient_has_higher_ambiguity(
         self, strict_regulation, lenient_regulation
     ):
-        """Test that lenient regulation has higher ambiguity score."""
+        """Test that lenient regulation has higher ambiguity score.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+        """
         detector = AmbiguityDetector()
         
         strict_report = detector.detect(strict_regulation, "Strict")
@@ -135,7 +184,14 @@ class TestSyntheticRegulations:
     def test_jurisdictional_gaps_identified(
         self, strict_regulation, lenient_regulation, clause_extractor, definition_extractor
     ):
-        """Test that jurisdictional gaps are identified."""
+        """Test that jurisdictional gaps are identified.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            clause_extractor: The clause extractor instance fixture.
+            definition_extractor: The definition extractor instance fixture.
+        """
         strict_clauses = clause_extractor.extract(strict_regulation)
         lenient_clauses = clause_extractor.extract(lenient_regulation)
         
@@ -166,7 +222,14 @@ class TestSyntheticRegulations:
     def test_gap_recommendations_not_prescriptive(
         self, strict_regulation, lenient_regulation, clause_extractor, definition_extractor
     ):
-        """Test that gap recommendations emphasize review, not action."""
+        """Test that gap recommendations emphasize review, not action.
+
+        Args:
+            strict_regulation: The strict regulation text fixture.
+            lenient_regulation: The lenient regulation text fixture.
+            clause_extractor: The clause extractor instance fixture.
+            definition_extractor: The definition extractor instance fixture.
+        """
         strict_clauses = clause_extractor.extract(strict_regulation)
         lenient_clauses = clause_extractor.extract(lenient_regulation)
         
@@ -206,6 +269,11 @@ class TestRegressionClauseExtraction:
     
     @pytest.fixture
     def extractor(self):
+        """Create a ClauseExtractor instance fixture.
+
+        Returns:
+            ClauseExtractor: A new clause extractor for parsing regulation text.
+        """
         return ClauseExtractor()
     
     @pytest.mark.parametrize("text,expected_type", [
@@ -220,7 +288,13 @@ class TestRegressionClauseExtraction:
         ("If the transaction exceeds the threshold, reporting is required.", ClauseType.CONDITION),
     ])
     def test_clause_type_detection(self, extractor, text, expected_type):
-        """Test that specific clause patterns are correctly classified."""
+        """Test that specific clause patterns are correctly classified.
+
+        Args:
+            extractor: The clause extractor instance fixture.
+            text: The regulation text to parse.
+            expected_type: The expected ClauseType for the text.
+        """
         clauses = extractor.extract(text)
         
         assert len(clauses) >= 1
@@ -233,10 +307,19 @@ class TestFalsePositiveMinimization:
     
     @pytest.fixture
     def detector(self):
+        """Create an AmbiguityDetector instance fixture.
+
+        Returns:
+            AmbiguityDetector: A new ambiguity detector for analyzing text.
+        """
         return AmbiguityDetector()
     
     def test_specific_timeframes_not_ambiguous(self, detector):
-        """Test that specific timeframes are not flagged as ambiguous."""
+        """Test that specific timeframes are not flagged as ambiguous.
+
+        Args:
+            detector: The ambiguity detector instance fixture.
+        """
         text = "Reports must be filed within 30 days of the triggering event."
         report = detector.detect(text)
         
@@ -250,7 +333,11 @@ class TestFalsePositiveMinimization:
             assert "30 days" not in amb.text
     
     def test_specific_thresholds_not_ambiguous(self, detector):
-        """Test that specific thresholds are not flagged as ambiguous."""
+        """Test that specific thresholds are not flagged as ambiguous.
+
+        Args:
+            detector: The ambiguity detector instance fixture.
+        """
         text = "Transactions exceeding $10,000 must be reported."
         report = detector.detect(text)
         
@@ -264,7 +351,11 @@ class TestFalsePositiveMinimization:
             assert "$10,000" not in amb.text
     
     def test_defined_terms_not_undefined(self):
-        """Test that properly defined terms are not flagged as undefined."""
+        """Test that properly defined terms are not flagged as undefined.
+
+        Creates an AmbiguityDetector with predefined terms and verifies that
+        those terms are not incorrectly flagged as undefined in the text.
+        """
         detector = AmbiguityDetector(defined_terms={"covered person", "reporting period"})
         
         text = '''

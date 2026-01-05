@@ -44,7 +44,13 @@ class JurisdictionalGap:
     requires_legal_review: bool = True
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the jurisdictional gap to a dictionary for serialization.
+
+        Returns:
+            dict: A dictionary representation of the gap containing all fields
+                including gap_type, jurisdictions, description, clauses,
+                severity, confidence, recommendations, and review requirement.
+        """
         return {
             'gap_type': self.gap_type.value,
             'jurisdiction_a': self.jurisdiction_a,
@@ -74,7 +80,11 @@ class JurisdictionProfile:
         self._count_clause_types()
     
     def _count_clause_types(self):
-        """Count clauses by type."""
+        """Count clauses by type and update instance counters.
+
+        Updates the obligation_count, prohibition_count, and permission_count
+        attributes based on the clause types present in the clauses list.
+        """
         self.obligation_count = sum(1 for c in self.clauses if c.clause_type == ClauseType.OBLIGATION)
         self.prohibition_count = sum(1 for c in self.clauses if c.clause_type == ClauseType.PROHIBITION)
         self.permission_count = sum(1 for c in self.clauses if c.clause_type == ClauseType.PERMISSION)
@@ -149,7 +159,17 @@ class JurisdictionalComparator:
         jurisdiction_a: str,
         jurisdiction_b: str
     ) -> Optional[JurisdictionalGap]:
-        """Convert a clause difference to a jurisdictional gap."""
+        """Convert a clause difference to a jurisdictional gap.
+
+        Args:
+            diff: The clause difference to convert.
+            jurisdiction_a: Name of the first jurisdiction.
+            jurisdiction_b: Name of the second jurisdiction.
+
+        Returns:
+            Optional[JurisdictionalGap]: A JurisdictionalGap if the difference
+                is significant, or None if the clauses are equivalent.
+        """
         
         if diff.difference_type == DifferenceType.EQUIVALENT:
             return None
@@ -217,7 +237,19 @@ class JurisdictionalComparator:
         return recommendations
     
     def _calculate_severity(self, diff: ClauseDifference) -> float:
-        """Calculate severity score for a difference."""
+        """Calculate severity score for a clause difference.
+
+        Severity is based on clause type (prohibitions and obligations are more
+        severe), difference type (ambiguous/conflicting increases severity),
+        and confidence level (lower confidence increases severity).
+
+        Args:
+            diff: The clause difference to evaluate.
+
+        Returns:
+            float: A severity score between 0.0 and 1.0, where higher values
+                indicate more severe gaps requiring greater attention.
+        """
         base_severity = 0.5
         
         # Higher severity for prohibitions and obligations
@@ -242,7 +274,21 @@ class JurisdictionalComparator:
         jurisdiction_a: str,
         jurisdiction_b: str
     ) -> list[JurisdictionalGap]:
-        """Compare definitions between jurisdictions."""
+        """Compare definitions between jurisdictions to find conflicts.
+
+        Identifies terms that are defined differently across jurisdictions,
+        which may create compliance ambiguity or conflicts.
+
+        Args:
+            defs_a: Definitions from the first jurisdiction.
+            defs_b: Definitions from the second jurisdiction.
+            jurisdiction_a: Name of the first jurisdiction.
+            jurisdiction_b: Name of the second jurisdiction.
+
+        Returns:
+            list[JurisdictionalGap]: A list of gaps representing definitional
+                conflicts where the same term has different meanings.
+        """
         gaps = []
         
         # Build lookup by term
@@ -281,7 +327,20 @@ class JurisdictionalComparator:
         profile_a: JurisdictionProfile,
         profile_b: JurisdictionProfile
     ) -> list[JurisdictionalGap]:
-        """Analyze overall regulatory burden differences."""
+        """Analyze overall regulatory burden differences between jurisdictions.
+
+        Compares the number of obligations between jurisdictions to identify
+        significant scope differences that may impact compliance planning.
+
+        Args:
+            profile_a: Profile of the first jurisdiction.
+            profile_b: Profile of the second jurisdiction.
+
+        Returns:
+            list[JurisdictionalGap]: A list of gaps indicating significant
+                differences in regulatory burden (e.g., one jurisdiction
+                having 50% more obligations than another).
+        """
         gaps = []
         
         # Compare obligation counts

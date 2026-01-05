@@ -39,7 +39,13 @@ class ClauseDifference:
     requires_legal_review: bool = False
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        Returns:
+            dict: A dictionary representation of the ClauseDifference containing
+                clause_a, clause_b, difference_type, similarity_score, analysis,
+                confidence, risk_factors, and requires_legal_review fields.
+        """
         return {
             'clause_a': self.clause_a.to_dict(),
             'clause_b': self.clause_b.to_dict() if self.clause_b else None,
@@ -168,14 +174,35 @@ class SemanticDiff:
         return differences
     
     def _calculate_similarity(self, text_a: str, text_b: str) -> float:
-        """Calculate semantic similarity between two texts."""
+        """Calculate semantic similarity between two texts.
+
+        Uses embedding-based similarity if an embedding model is available,
+        otherwise falls back to keyword-based Jaccard similarity.
+
+        Args:
+            text_a: First text to compare.
+            text_b: Second text to compare.
+
+        Returns:
+            float: Similarity score between 0.0 and 1.0.
+        """
         if self.embedding_model:
             return self._embedding_similarity(text_a, text_b)
         else:
             return self._keyword_similarity(text_a, text_b)
     
     def _embedding_similarity(self, text_a: str, text_b: str) -> float:
-        """Calculate similarity using embeddings."""
+        """Calculate similarity using embeddings.
+
+        Computes cosine similarity between the embedding vectors of two texts.
+
+        Args:
+            text_a: First text to compare.
+            text_b: Second text to compare.
+
+        Returns:
+            float: Cosine similarity score between 0.0 and 1.0.
+        """
         emb_a = self._get_embedding(text_a)
         emb_b = self._get_embedding(text_b)
         
@@ -190,13 +217,32 @@ class SemanticDiff:
         return float(dot_product / (norm_a * norm_b))
     
     def _get_embedding(self, text: str) -> np.ndarray:
-        """Get or compute embedding for text."""
+        """Get or compute embedding for text.
+
+        Caches embeddings to avoid redundant computation.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            np.ndarray: The embedding vector for the text.
+        """
         if text not in self._embeddings_cache:
             self._embeddings_cache[text] = self.embedding_model(text)
         return self._embeddings_cache[text]
     
     def _keyword_similarity(self, text_a: str, text_b: str) -> float:
-        """Simple keyword-based similarity when embeddings unavailable."""
+        """Simple keyword-based similarity when embeddings unavailable.
+
+        Computes Jaccard similarity between the word sets of two texts.
+
+        Args:
+            text_a: First text to compare.
+            text_b: Second text to compare.
+
+        Returns:
+            float: Jaccard similarity score between 0.0 and 1.0.
+        """
         words_a = set(text_a.lower().split())
         words_b = set(text_b.lower().split())
         
@@ -215,7 +261,20 @@ class SemanticDiff:
         clause_b: RegulatoryClause,
         similarity: float
     ) -> ClauseDifference:
-        """Analyze the difference between two similar clauses."""
+        """Analyze the difference between two similar clauses.
+
+        Examines language indicators to classify whether one clause is stricter,
+        looser, ambiguous, equivalent, or conflicting relative to the other.
+
+        Args:
+            clause_a: The first regulatory clause.
+            clause_b: The second regulatory clause.
+            similarity: Pre-computed similarity score between the clauses.
+
+        Returns:
+            ClauseDifference: Analysis result including difference type,
+                confidence, risk factors, and whether legal review is required.
+        """
         text_a = clause_a.text.lower()
         text_b = clause_b.text.lower()
         
@@ -281,19 +340,44 @@ class SemanticDiff:
         self,
         differences: list[ClauseDifference]
     ) -> list[ClauseDifference]:
-        """Filter to only stricter clause differences."""
+        """Filter to only stricter clause differences.
+
+        Args:
+            differences: List of clause differences to filter.
+
+        Returns:
+            list[ClauseDifference]: Differences where the first clause is
+                stricter than the second.
+        """
         return [d for d in differences if d.difference_type == DifferenceType.STRICTER]
     
     def find_looser_clauses(
         self,
         differences: list[ClauseDifference]
     ) -> list[ClauseDifference]:
-        """Filter to only looser clause differences."""
+        """Filter to only looser clause differences.
+
+        Args:
+            differences: List of clause differences to filter.
+
+        Returns:
+            list[ClauseDifference]: Differences where the first clause is
+                looser than the second.
+        """
         return [d for d in differences if d.difference_type == DifferenceType.LOOSER]
     
     def get_review_required(
         self,
         differences: list[ClauseDifference]
     ) -> list[ClauseDifference]:
-        """Get clauses that require legal review."""
+        """Get clauses that require legal review.
+
+        Args:
+            differences: List of clause differences to filter.
+
+        Returns:
+            list[ClauseDifference]: Differences flagged as requiring
+                manual legal review due to ambiguity, conflicts, or
+                low confidence.
+        """
         return [d for d in differences if d.requires_legal_review]

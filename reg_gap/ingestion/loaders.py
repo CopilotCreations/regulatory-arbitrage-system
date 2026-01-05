@@ -46,6 +46,14 @@ class PDFLoader(DocumentLoader):
     """Loader for PDF regulatory documents."""
     
     def supports(self, path: str) -> bool:
+        """Check if this loader supports the given file path.
+
+        Args:
+            path: File path to check.
+
+        Returns:
+            True if the file is a PDF, False otherwise.
+        """
         return path.lower().endswith('.pdf')
     
     def load(self, path: str, jurisdiction: str, **kwargs) -> RegulatoryDocument:
@@ -91,7 +99,14 @@ class PDFLoader(DocumentLoader):
         )
     
     def _fallback_load(self, path: str) -> str:
-        """Fallback when pypdf is not available."""
+        """Fallback when pypdf is not available.
+
+        Args:
+            path: Path to the PDF file.
+
+        Returns:
+            Placeholder string indicating the PDF source path.
+        """
         return f"[PDF content from: {path}]"
 
 
@@ -99,6 +114,14 @@ class HTMLLoader(DocumentLoader):
     """Loader for HTML regulatory documents."""
     
     def supports(self, path: str) -> bool:
+        """Check if this loader supports the given file path.
+
+        Args:
+            path: File path to check.
+
+        Returns:
+            True if the file is an HTML file, False otherwise.
+        """
         return path.lower().endswith(('.html', '.htm'))
     
     def load(self, path: str, jurisdiction: str, **kwargs) -> RegulatoryDocument:
@@ -145,7 +168,14 @@ class HTMLLoader(DocumentLoader):
         )
     
     def _strip_html_tags(self, html: str) -> str:
-        """Basic HTML tag stripping without BeautifulSoup."""
+        """Basic HTML tag stripping without BeautifulSoup.
+
+        Args:
+            html: Raw HTML content string.
+
+        Returns:
+            Plain text with HTML tags, scripts, and styles removed.
+        """
         clean = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
         clean = re.sub(r'<style[^>]*>.*?</style>', '', clean, flags=re.DOTALL | re.IGNORECASE)
         clean = re.sub(r'<[^>]+>', ' ', clean)
@@ -157,6 +187,14 @@ class DOCXLoader(DocumentLoader):
     """Loader for DOCX regulatory documents."""
     
     def supports(self, path: str) -> bool:
+        """Check if this loader supports the given file path.
+
+        Args:
+            path: File path to check.
+
+        Returns:
+            True if the file is a DOCX file, False otherwise.
+        """
         return path.lower().endswith('.docx')
     
     def load(self, path: str, jurisdiction: str, **kwargs) -> RegulatoryDocument:
@@ -195,7 +233,14 @@ class DOCXLoader(DocumentLoader):
         )
     
     def _fallback_load(self, path: str) -> str:
-        """Fallback when python-docx is not available."""
+        """Fallback when python-docx is not available.
+
+        Args:
+            path: Path to the DOCX file.
+
+        Returns:
+            Placeholder string indicating the DOCX source path.
+        """
         return f"[DOCX content from: {path}]"
 
 
@@ -203,10 +248,30 @@ class TextLoader(DocumentLoader):
     """Loader for plain text regulatory documents."""
     
     def supports(self, path: str) -> bool:
+        """Check if this loader supports the given file path.
+
+        Args:
+            path: File path to check.
+
+        Returns:
+            True if the file is a plain text file, False otherwise.
+        """
         return path.lower().endswith('.txt')
     
     def load(self, path: str, jurisdiction: str, **kwargs) -> RegulatoryDocument:
-        """Load a plain text document."""
+        """Load a plain text document.
+
+        Args:
+            path: Path to the text file.
+            jurisdiction: Regulatory jurisdiction (e.g., "US-SEC", "EU-MiFID").
+            **kwargs: Additional metadata including version, effective_date, and metadata.
+
+        Returns:
+            RegulatoryDocument with the text content.
+
+        Raises:
+            FileNotFoundError: If the text file does not exist.
+        """
         if not os.path.exists(path):
             raise FileNotFoundError(f"Text file not found: {path}")
         
@@ -228,6 +293,7 @@ class UniversalLoader:
     """Universal loader that selects appropriate loader based on file type."""
     
     def __init__(self):
+        """Initialize the UniversalLoader with all available document loaders."""
         self.loaders = [
             PDFLoader(),
             HTMLLoader(),
@@ -236,7 +302,19 @@ class UniversalLoader:
         ]
     
     def load(self, path: str, jurisdiction: str, **kwargs) -> RegulatoryDocument:
-        """Load a document using the appropriate loader."""
+        """Load a document using the appropriate loader.
+
+        Args:
+            path: Path to the document file.
+            jurisdiction: Regulatory jurisdiction (e.g., "US-SEC", "EU-MiFID").
+            **kwargs: Additional metadata passed to the specific loader.
+
+        Returns:
+            RegulatoryDocument with extracted content.
+
+        Raises:
+            ValueError: If no loader supports the given file type.
+        """
         for loader in self.loaders:
             if loader.supports(path):
                 return loader.load(path, jurisdiction, **kwargs)
@@ -244,7 +322,16 @@ class UniversalLoader:
         raise ValueError(f"Unsupported file type: {path}")
     
     def load_directory(self, directory: str, jurisdiction: str, **kwargs) -> list[RegulatoryDocument]:
-        """Load all supported documents from a directory."""
+        """Load all supported documents from a directory.
+
+        Args:
+            directory: Path to the directory to scan.
+            jurisdiction: Regulatory jurisdiction to assign to all documents.
+            **kwargs: Additional metadata passed to each loader.
+
+        Returns:
+            List of RegulatoryDocument objects for all successfully loaded files.
+        """
         documents = []
         path = Path(directory)
         

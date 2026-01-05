@@ -20,7 +20,12 @@ class RiskInterval:
     confidence_level: float  # e.g., 0.95 for 95% confidence
     
     def __post_init__(self):
-        # Validate bounds
+        """Validate that bounds are properly ordered and within valid ranges.
+
+        Raises:
+            AssertionError: If bounds are not in order (0 <= lower <= point <= upper <= 1)
+                or if confidence_level is not between 0 and 1.
+        """
         assert 0 <= self.lower_bound <= self.point_estimate <= self.upper_bound <= 1, \
             "Bounds must be in order: 0 <= lower <= point <= upper <= 1"
         assert 0 < self.confidence_level < 1, \
@@ -28,21 +33,38 @@ class RiskInterval:
     
     @property
     def width(self) -> float:
-        """Width of the confidence interval."""
+        """Calculate the width of the confidence interval.
+
+        Returns:
+            The difference between upper_bound and lower_bound.
+        """
         return self.upper_bound - self.lower_bound
     
     @property
     def is_wide(self) -> bool:
-        """Whether interval is wide (high uncertainty)."""
+        """Determine whether the interval indicates high uncertainty.
+
+        Returns:
+            True if the interval width exceeds 0.3, indicating high uncertainty.
+        """
         return self.width > 0.3
     
     @property
     def conservative_estimate(self) -> float:
-        """Return the conservative (upper bound) estimate for planning."""
+        """Return the conservative estimate for risk planning purposes.
+
+        Returns:
+            The upper_bound value, representing the worst-case risk scenario.
+        """
         return self.upper_bound
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert the RiskInterval to a dictionary for serialization.
+
+        Returns:
+            A dictionary containing point_estimate, lower_bound, upper_bound,
+            confidence_level, width, and is_wide values.
+        """
         return {
             'point_estimate': self.point_estimate,
             'lower_bound': self.lower_bound,
@@ -141,7 +163,17 @@ class ConfidenceBounds:
         )
     
     def _approximate_z_score(self, confidence: float) -> float:
-        """Approximate z-score for given confidence level."""
+        """Approximate the z-score for a given confidence level.
+
+        Uses lookup for common values (0.90, 0.95, 0.99) and linear
+        interpolation for other values.
+
+        Args:
+            confidence: The confidence level (e.g., 0.95 for 95% confidence).
+
+        Returns:
+            The approximate z-score corresponding to the confidence level.
+        """
         # Common values
         z_scores = {
             0.90: 1.645,

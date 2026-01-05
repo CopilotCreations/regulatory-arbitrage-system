@@ -35,7 +35,12 @@ class SeverityRating:
     requires_legal_review: bool = True
     
     def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        Returns:
+            dict: Dictionary containing all rating fields with severity level
+                converted to name string and numeric value.
+        """
         return {
             'level': self.level.name,
             'level_value': self.level.value,
@@ -237,7 +242,18 @@ class SeverityAssessor:
         )
     
     def _score_to_level(self, score: float) -> SeverityLevel:
-        """Convert numeric score to severity level."""
+        """Convert numeric score to severity level.
+
+        Maps a continuous score to a discrete severity level using
+        configured thresholds.
+
+        Args:
+            score: Numeric severity score between 0.0 and 1.0.
+
+        Returns:
+            SeverityLevel: The corresponding severity level based on
+                threshold boundaries.
+        """
         if score >= self.critical_threshold:
             return SeverityLevel.CRITICAL
         elif score >= self.high_threshold:
@@ -254,7 +270,19 @@ class SeverityAssessor:
         gap: JurisdictionalGap,
         level: SeverityLevel
     ) -> str:
-        """Generate recommendation for gap."""
+        """Generate recommendation for a jurisdictional gap.
+
+        Creates actionable guidance based on the gap type and severity level,
+        ranging from immediate legal review for critical issues to routine
+        monitoring for low-severity gaps.
+
+        Args:
+            gap: The jurisdictional gap being assessed.
+            level: The determined severity level for the gap.
+
+        Returns:
+            str: Human-readable recommendation text for addressing the gap.
+        """
         if level == SeverityLevel.CRITICAL:
             return (
                 f"CRITICAL: {gap.gap_type.value} between {gap.jurisdiction_a} and "
@@ -279,7 +307,19 @@ class SeverityAssessor:
         ambiguity: AmbiguityInstance,
         level: SeverityLevel
     ) -> str:
-        """Generate recommendation for ambiguity."""
+        """Generate recommendation for an ambiguity instance.
+
+        Creates actionable guidance based on the ambiguity characteristics
+        and severity level, advising on interpretation approaches and
+        documentation requirements.
+
+        Args:
+            ambiguity: The ambiguity instance being assessed.
+            level: The determined severity level for the ambiguity.
+
+        Returns:
+            str: Human-readable recommendation text for handling the ambiguity.
+        """
         if level == SeverityLevel.CRITICAL:
             return (
                 f"CRITICAL AMBIGUITY: '{ambiguity.trigger_phrase}' creates significant "
@@ -303,7 +343,18 @@ class SeverityAssessor:
         clause: RegulatoryClause,
         level: SeverityLevel
     ) -> str:
-        """Generate recommendation for clause."""
+        """Generate recommendation for a regulatory clause.
+
+        Creates actionable guidance based on the clause type and severity
+        level, specifying compliance requirements and review needs.
+
+        Args:
+            clause: The regulatory clause being assessed.
+            level: The determined severity level for the clause.
+
+        Returns:
+            str: Human-readable recommendation text for compliance with the clause.
+        """
         if level == SeverityLevel.CRITICAL:
             return (
                 f"CRITICAL: {clause.clause_type.value.upper()} requires rigorous "

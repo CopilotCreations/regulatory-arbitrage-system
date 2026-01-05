@@ -53,6 +53,13 @@ class TextNormalizer:
         remove_citations: bool = False,
         preserve_structure: bool = True
     ):
+        """Initialize the TextNormalizer.
+
+        Args:
+            lowercase: If True, convert all text to lowercase.
+            remove_citations: If True, remove citation references from text.
+            preserve_structure: If True, maintain paragraph and section structure.
+        """
         self.lowercase = lowercase
         self.remove_citations = remove_citations
         self.preserve_structure = preserve_structure
@@ -101,7 +108,15 @@ class TextNormalizer:
         )
     
     def _normalize_whitespace(self, text: str) -> str:
-        """Normalize whitespace while preserving paragraph structure."""
+        """Normalize whitespace while preserving paragraph structure.
+
+        Args:
+            text: Input text with potentially irregular whitespace.
+
+        Returns:
+            Text with standardized whitespace (single spaces, double newlines
+            for paragraphs).
+        """
         # Replace multiple spaces with single space
         text = re.sub(r'[^\S\n]+', ' ', text)
         
@@ -115,7 +130,17 @@ class TextNormalizer:
         return text.strip()
     
     def _normalize_citations(self, text: str) -> str:
-        """Normalize legal citations for consistency."""
+        """Normalize legal citations for consistency.
+
+        Converts abbreviations like U.S.C. to USC, C.F.R. to CFR, etc.
+        Optionally removes citation references if remove_citations is True.
+
+        Args:
+            text: Input text containing legal citations.
+
+        Returns:
+            Text with normalized citation formats.
+        """
         for pattern, replacement in self.CITATION_PATTERNS:
             text = re.sub(pattern, replacement, text)
         
@@ -127,7 +152,22 @@ class TextNormalizer:
         return text
     
     def _extract_sections(self, text: str) -> list[dict]:
-        """Extract section structure from text."""
+        """Extract section structure from text.
+
+        Identifies sections, articles, rules, and parts using common
+        regulatory document patterns.
+
+        Args:
+            text: Normalized regulatory text.
+
+        Returns:
+            List of section dictionaries containing:
+                - id: Section identifier (e.g., "1.2.3")
+                - start: Character position where section starts
+                - end: Character position where section ends
+                - content: Truncated content (max 500 chars)
+                - full_content: Complete section content
+        """
         sections = []
         
         for pattern in self.SECTION_PATTERNS:
@@ -158,7 +198,17 @@ class TextNormalizer:
         return self._deduplicate_sections(sections)
     
     def _deduplicate_sections(self, sections: list[dict]) -> list[dict]:
-        """Remove overlapping section extractions."""
+        """Remove overlapping section extractions.
+
+        When multiple patterns match the same text region, keeps the most
+        specific section (longest ID) or non-overlapping sections.
+
+        Args:
+            sections: List of section dictionaries sorted by start position.
+
+        Returns:
+            Deduplicated list of non-overlapping sections.
+        """
         if not sections:
             return []
         
@@ -176,13 +226,21 @@ class TextNormalizer:
         return deduplicated
     
     def extract_definitions(self, text: str) -> list[dict]:
-        """
-        Extract defined terms from regulatory text.
-        
+        """Extract defined terms from regulatory text.
+
         Looks for patterns like:
-        - "term" means ...
-        - "term" shall mean ...
-        - As used in this section, "term" refers to ...
+            - "term" means ...
+            - "term" shall mean ...
+            - As used in this section, "term" refers to ...
+
+        Args:
+            text: Regulatory text to search for definitions.
+
+        Returns:
+            List of definition dictionaries containing:
+                - term: The defined term
+                - context: Surrounding text (up to 200 chars after match)
+                - position: Character position of the definition
         """
         definitions = []
         

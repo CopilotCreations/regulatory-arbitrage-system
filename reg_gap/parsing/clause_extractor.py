@@ -98,6 +98,14 @@ class ClauseExtractor:
     ]
     
     def __init__(self, min_clause_length: int = 20, max_clause_length: int = 1000):
+        """Initialize the clause extractor with length constraints.
+
+        Args:
+            min_clause_length: Minimum character length for a valid clause.
+                Sentences shorter than this are ignored.
+            max_clause_length: Maximum character length for a clause.
+                Longer sentences are truncated with ellipsis.
+        """
         self.min_clause_length = min_clause_length
         self.max_clause_length = max_clause_length
         
@@ -109,7 +117,15 @@ class ClauseExtractor:
         self._exception_re = self._compile_patterns(self.EXCEPTION_PATTERNS)
     
     def _compile_patterns(self, patterns: list[str]) -> re.Pattern:
-        """Compile list of patterns into single regex."""
+        """Compile a list of regex patterns into a single compiled pattern.
+
+        Args:
+            patterns: List of regex pattern strings to combine.
+
+        Returns:
+            A compiled regex pattern that matches any of the input patterns,
+            case-insensitive.
+        """
         combined = '|'.join(f'({p})' for p in patterns)
         return re.compile(combined, re.IGNORECASE)
     
@@ -157,7 +173,17 @@ class ClauseExtractor:
         return clauses
     
     def _split_sentences(self, text: str) -> list[str]:
-        """Split text into sentences."""
+        """Split text into individual sentences.
+
+        Handles common abbreviations (Mr., Dr., etc.) to avoid false splits
+        on periods that don't end sentences.
+
+        Args:
+            text: The input text to split into sentences.
+
+        Returns:
+            List of sentence strings, stripped of leading/trailing whitespace.
+        """
         # Handle common abbreviations to avoid false splits
         text = re.sub(r'\b(Mr|Mrs|Dr|Inc|Ltd|etc|vs|i\.e|e\.g)\.\s', r'\1<PERIOD> ', text)
         
@@ -170,7 +196,19 @@ class ClauseExtractor:
         return [s.strip() for s in sentences if s.strip()]
     
     def _classify_clause(self, sentence: str) -> ClauseType:
-        """Classify a sentence by its regulatory nature."""
+        """Classify a sentence by its regulatory nature.
+
+        Checks patterns in order of specificity: prohibitions first (most
+        specific), then obligations, permissions, exceptions, conditions,
+        and definitions.
+
+        Args:
+            sentence: The sentence to classify.
+
+        Returns:
+            The ClauseType that best matches the sentence, or UNKNOWN if
+            no patterns match.
+        """
         # Check patterns in order of specificity
         if self._prohibition_re.search(sentence):
             return ClauseType.PROHIBITION
@@ -188,7 +226,17 @@ class ClauseExtractor:
         return ClauseType.UNKNOWN
     
     def _is_definition(self, sentence: str) -> bool:
-        """Check if sentence is a definition."""
+        """Check if a sentence is a regulatory definition.
+
+        Looks for common definition patterns such as quoted terms followed
+        by "means", "shall mean", or "is defined as".
+
+        Args:
+            sentence: The sentence to check.
+
+        Returns:
+            True if the sentence matches a definition pattern, False otherwise.
+        """
         definition_patterns = [
             r'"[^"]+" means',
             r'"[^"]+" shall mean',
@@ -198,7 +246,19 @@ class ClauseExtractor:
         return any(re.search(p, sentence) for p in definition_patterns)
     
     def _calculate_confidence(self, sentence: str, clause_type: ClauseType) -> float:
-        """Calculate confidence score for classification."""
+        """Calculate a confidence score for the clause classification.
+
+        Confidence starts at 0.5 and increases based on the number of
+        matching patterns and sentence length. Multiple pattern matches
+        and longer sentences indicate higher confidence.
+
+        Args:
+            sentence: The classified sentence.
+            clause_type: The assigned clause type.
+
+        Returns:
+            A confidence score between 0.5 and 1.0.
+        """
         confidence = 0.5  # Base confidence
         
         # Multiple indicators increase confidence
@@ -221,7 +281,17 @@ class ClauseExtractor:
         return min(1.0, confidence)
     
     def _extract_subject(self, sentence: str) -> Optional[str]:
-        """Extract the subject of the clause."""
+        """Extract the subject (regulated entity) from a clause.
+
+        Looks for common regulatory subjects at the beginning of the
+        sentence, such as "registrant", "broker", "dealer", etc.
+
+        Args:
+            sentence: The sentence to extract the subject from.
+
+        Returns:
+            The extracted subject string, or None if no subject pattern matches.
+        """
         # Common regulatory subjects
         subject_patterns = [
             r'^((?:The |A |An )?(?:registrant|issuer|broker|dealer|investment adviser|'
@@ -238,7 +308,18 @@ class ClauseExtractor:
         return None
     
     def _extract_action(self, sentence: str) -> Optional[str]:
-        """Extract the main action/verb phrase."""
+        """Extract the main action or verb phrase from a clause.
+
+        Looks for modal verbs (shall, must, may, etc.) followed by the
+        main verb to identify the required or prohibited action.
+
+        Args:
+            sentence: The sentence to extract the action from.
+
+        Returns:
+            The extracted action phrase (up to two words), or None if
+            no modal verb pattern is found.
+        """
         # Look for modal + verb patterns
         action_pattern = r'(?:shall|must|may|will|should|can)\s+(?:not\s+)?(\w+(?:\s+\w+)?)'
         match = re.search(action_pattern, sentence, re.IGNORECASE)
@@ -248,7 +329,18 @@ class ClauseExtractor:
         return None
     
     def _extract_conditions(self, sentence: str) -> list[str]:
-        """Extract conditional clauses."""
+        """Extract conditional clauses from a sentence.
+
+        Identifies conditions introduced by keywords like "if", "when",
+        "where", "provided that", or "subject to".
+
+        Args:
+            sentence: The sentence to extract conditions from.
+
+        Returns:
+            List of condition strings found in the sentence. Empty list
+            if no conditions are found.
+        """
         conditions = []
         
         condition_patterns = [
@@ -266,7 +358,18 @@ class ClauseExtractor:
         return conditions
     
     def _extract_exceptions(self, sentence: str) -> list[str]:
-        """Extract exception clauses."""
+        """Extract exception clauses from a sentence.
+
+        Identifies exceptions introduced by keywords like "except",
+        "unless", "excluding", or "other than".
+
+        Args:
+            sentence: The sentence to extract exceptions from.
+
+        Returns:
+            List of exception strings found in the sentence. Empty list
+            if no exceptions are found.
+        """
         exceptions = []
         
         exception_patterns = [
@@ -283,7 +386,15 @@ class ClauseExtractor:
         return exceptions
     
     def extract_all_types(self, text: str) -> dict[ClauseType, list[RegulatoryClause]]:
-        """Extract and group clauses by type."""
+        """Extract clauses from text and group them by clause type.
+
+        Args:
+            text: The regulatory text to analyze.
+
+        Returns:
+            Dictionary mapping each ClauseType to a list of matching
+            RegulatoryClause objects. Empty lists for types with no matches.
+        """
         clauses = self.extract(text)
         
         grouped = {ct: [] for ct in ClauseType}
